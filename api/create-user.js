@@ -7,18 +7,17 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // ✅ Diese CORS-Header werden IMMER mitgegeben – auch bei POST
+  // ✅ CORS-Header – werden IMMER gesetzt
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Vary', 'Origin');
 
-  // ✅ Wenn es eine Preflight-OPTIONS-Anfrage ist → sofort mit 200 antworten
+  // ✅ OPTIONS-Anfrage = Preflight → sofort beenden
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // 👇 Ab hier kommt deine Logik
   const { email, password } = req.body;
 
   if (!email || !password) {
