@@ -4,7 +4,7 @@ export const config = {
   api: {
     bodyParser: true,
   },
-};
+}; 
  
 export default async function handler(req, res) {
   // ✅ Diese Header müssen immer gesetzt werden – auch bei POST
