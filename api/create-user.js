@@ -7,18 +7,18 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // ✅ Header für ALLE Anfragen (POST, OPTIONS, etc.)
+  // ✅ Diese Header müssen immer gesetzt werden – auch bei POST
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Vary', 'Origin');
 
-  // ✅ Sofort auf OPTIONS antworten
+  // ✅ Sofort auf OPTIONS antworten (Preflight-Anfrage)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Ab hier dein Logikteil
+  // ✅ Dein eigentlicher Code
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
+    email_confirm: true
   });
 
   if (error) {
