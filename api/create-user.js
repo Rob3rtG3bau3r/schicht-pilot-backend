@@ -5,7 +5,7 @@ export const config = {
     bodyParser: true,
   },
 };
-
+ 
 export default async function handler(req, res) {
   // ✅ Diese Header müssen immer gesetzt werden – auch bei POST
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
