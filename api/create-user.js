@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       nachname: userData.nachname,
       rolle: userData.rolle,
       firma: userData.firma,
-      einheit: userData.einheit,
+      unit: userData.unit,
       funktion: userData.funktion,
       erstellt_von: userData.erstellt_von || null,
       erstellt_am: new Date().toISOString(),
