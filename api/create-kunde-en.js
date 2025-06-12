@@ -37,16 +37,24 @@ export default async function handler(req, res) {
 
   const userId = authUser.user.id;
 
-  // Schritt 2: Kunde speichern
-const { error: kundeError } = await supabase.from('DB_Kunde').insert([
-  {
-    firmenname: kundenData.firmenname,
-    aktiv: kundenData.aktiv ?? true,
-    verantwortlich: kundenData.verantwortlich,
-    erstellt_von: kundenData.erstellt_von || null,
-    created_at: new Date().toISOString(),
-  },
-]);
+// Schritt 2: Kunde speichern
+console.log('Daten die gespeichert werden sollen:', kundenData);
+
+const { data, error: kundeError } = await supabase
+  .from('DB_Kunde')
+  .insert([
+    {
+      firmenname: kundenData.firmenname,
+      aktiv: kundenData.aktiv ?? true,
+      verantwortlich: kundenData.verantwortlich,
+      erstellt_von: kundenData.erstellt_von || null,
+      created_at: new Date().toISOString(),
+    }
+  ])
+  .select(); // zeigt was gespeichert wurde
+
+console.log('Was in die DB geschrieben wurde:', data);
+
 
   if (kundeError) {
     return res.status(500).json({ error: 'Fehler beim Speichern des Kunden: ' + kundeError.message });
