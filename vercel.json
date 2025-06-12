@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/create-user.js",
+      "src": "api/*.js",
       "use": "@vercel/node"
     }
   ],
@@ -10,6 +10,10 @@
     {
       "src": "/api/create-user",
       "dest": "api/create-user.js"
+    },
+    {
+      "src": "/api/create-kunde-en",
+      "dest": "api/create-kunde-en.js"
     }
   ]
 }
