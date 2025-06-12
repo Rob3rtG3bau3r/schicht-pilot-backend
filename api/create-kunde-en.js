@@ -61,7 +61,7 @@ const { error: kundeError } = await supabase.from('DB_Kunde').insert([
       rolle: kundenData.rolle || 'Admin_Dev',
       firma: kundenData.firmenname,
       funktion: kundenData.funktion || 'Kostenverantwortlich',
-      erstellt_von: userId,
+      erstellt_von: kundenData.erstellt_von || null,
       erstellt_am: new Date().toISOString(),
       aktiv: true,
     },
