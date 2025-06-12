@@ -40,13 +40,14 @@ export default async function handler(req, res) {
 
   // Schritt 2: Kunde speichern
   const { data, error: kundeError } = await supabase.from('DB_Kunde').insert([
-    {
-      firmenname: kundenData.firmenname,
-      aktiv: kundenData.aktiv ?? true,
-      verantwortlich: kundenData.verantwortlich,
-      erstellt_von: kundenData.erstellt_von || null,
-      created_at: new Date().toISOString(),
-    },
+   {
+  firmenname: kundenData.firmenname,
+  aktiv: kundenData.aktiv ?? true,
+  verantwortlich: kundenData.verantwortlich,
+  erstellt_von: kundenData.erstellt_von || null,
+  created_at: new Date().toISOString(),
+  kosten_monatlich: null, // ← Fix!
+},
   ]).select();
 
   console.log('✅ Kunde gespeichert:', data);
