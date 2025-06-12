@@ -52,9 +52,11 @@ export default async function handler(req, res) {
 
   console.log('✅ Kunde gespeichert:', data);
 
-  if (kundeError) {
-    return res.status(500).json({ error: 'Fehler beim Speichern des Kunden: ' + kundeError.message });
-  }
+if (kundeError) {
+  console.error('❌ Fehler beim Einfügen in DB_Kunde:', kundeError);
+  return res.status(500).json({ error: 'Fehler beim Speichern des Kunden: ' + kundeError.message });
+}
+
 
   // Schritt 3: User in DB_User eintragen
   const { error: userError } = await supabase.from('DB_User').insert([
