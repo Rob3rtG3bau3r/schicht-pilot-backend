@@ -41,7 +41,7 @@ const { error: kundeError } = await supabase.from('DB_Kunde').insert([
   {
     firmenname: kundenData.firmenname,
     aktiv: kundenData.aktiv ?? true,
-    verantwortlich: userId,
+    verantwortlich: kundenData.verantwortlich,
     erstellt_von: kundenData.erstellt_von || null,
     created_at: new Date().toISOString(),
   },
