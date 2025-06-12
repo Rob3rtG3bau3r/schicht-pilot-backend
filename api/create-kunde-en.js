@@ -13,16 +13,17 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-
   const { email, password, kundenData } = req.body;
+  console.log('🛎 Anfrage erhalten:', req.body);
 
   if (!email || !password || !kundenData || !kundenData.firmenname) {
     return res.status(400).json({ error: 'Pflichtdaten fehlen.' });
   }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
   // Schritt 1: Auth-User erstellen
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
@@ -37,24 +38,18 @@ export default async function handler(req, res) {
 
   const userId = authUser.user.id;
 
-// Schritt 2: Kunde speichern
-console.log('Daten die gespeichert werden sollen:', kundenData);
-
-const { data, error: kundeError } = await supabase
-  .from('DB_Kunde')
-  .insert([
+  // Schritt 2: Kunde speichern
+  const { data, error: kundeError } = await supabase.from('DB_Kunde').insert([
     {
       firmenname: kundenData.firmenname,
       aktiv: kundenData.aktiv ?? true,
       verantwortlich: kundenData.verantwortlich,
       erstellt_von: kundenData.erstellt_von || null,
       created_at: new Date().toISOString(),
-    }
-  ])
-  .select(); // zeigt was gespeichert wurde
+    },
+  ]).select();
 
-console.log('Was in die DB geschrieben wurde:', data);
-
+  console.log('✅ Kunde gespeichert:', data);
 
   if (kundeError) {
     return res.status(500).json({ error: 'Fehler beim Speichern des Kunden: ' + kundeError.message });
@@ -82,3 +77,4 @@ console.log('Was in die DB geschrieben wurde:', data);
 
   return res.status(200).json({ message: 'Kunde + Verantwortlicher erfolgreich gespeichert.', user_id: userId });
 }
+
