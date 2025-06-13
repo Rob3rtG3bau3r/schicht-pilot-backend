@@ -57,7 +57,8 @@ export default async function handler(req, res) {
     };
 
     console.log('📦 Insert-Objekt für DB_Kunde:', kundePayload);
-
+    console.log('✅ KundenData vor Insert:', JSON.stringify(kundenData, null, 2));
+    
     const { data: kundeData, error: kundeError } = await supabase
       .from('DB_Kunde')
       .insert([kundePayload])
