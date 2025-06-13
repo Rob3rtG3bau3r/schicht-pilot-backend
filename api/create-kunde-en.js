@@ -1,3 +1,4 @@
+// /pages/api/create-kunde-en.js (NEU! angepasst für DB_Kunden)
 import { createClient } from '@supabase/supabase-js';
 
 export const config = {
@@ -13,11 +14,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { email, password, kundenData } = req.body;
+  const { kundenData } = req.body;
   console.log('🛎 Anfrage erhalten:', req.body);
 
-  if (!email || !password || !kundenData?.firmenname || !kundenData?.verantwortlich) {
-    return res.status(400).json({ error: 'Pflichtdaten fehlen (Email, Passwort, Firmenname, Verantwortlich).' });
+  if (!kundenData?.firmenname || !kundenData?.verantwortlich) {
+    return res.status(400).json({ error: 'Pflichtdaten fehlen (Firmenname, Verantwortlich).' });
   }
 
   const supabase = createClient(
@@ -26,69 +27,24 @@ export default async function handler(req, res) {
   );
 
   try {
-    // Schritt 1: Auth-User erstellen
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-
-    if (authError) {
-      console.error('❌ Supabase Auth-Fehler:', authError);
-      return res.status(500).json({ error: 'Auth-Fehler: ' + authError.message });
-    }
-
-    const userId = authUser.user.id;
-
-    // Schritt 2: Kunde in DB_Kunde eintragen (nur Minimalfelder)
-    const kundePayload = {
+    const insertData = {
       firmenname: kundenData.firmenname,
-      aktiv: true,
       verantwortlich: kundenData.verantwortlich,
+      created_by: kundenData.created_by || null,
+      aktiv: true,
     };
 
-    console.log('📦 DB_Kunde INSERT:', JSON.stringify(kundePayload, null, 2));
-
-    const { error: kundeError } = await supabase
-      .from('DB_Kunde')
-      .insert([kundePayload]); // kein .select()
+    const { error: kundeError } = await supabase.from('DB_Kunden').insert([insertData]);
 
     if (kundeError) {
-      console.error('❌ DB_Kunde Insert Error:', kundeError);
-      return res.status(500).json({ error: 'Insert in DB_Kunde fehlgeschlagen: ' + kundeError.message });
+      console.error('❌ DB_Kunden Insert Error:', kundeError);
+      return res.status(500).json({ error: 'Insert in DB_Kunden fehlgeschlagen: ' + kundeError.message });
     }
 
-    console.log('✅ Kunde erfolgreich angelegt.');
-
-    // Schritt 3: User in DB_User schreiben
-    const userInsert = {
-      user_id: userId,
-      email,
-      vorname: kundenData.vorname || '',
-      nachname: kundenData.nachname || '',
-      rolle: kundenData.rolle || 'Admin_Dev',
-      firma: kundenData.firmenname,
-      funktion: kundenData.funktion || 'Kostenverantwortlich',
-      erstellt_von: kundenData.erstellt_von || null,
-      erstellt_am: new Date().toISOString(),
-      aktiv: true,
-    };
-
-    const { error: userError } = await supabase.from('DB_User').insert([userInsert]);
-
-    if (userError) {
-      console.error('❌ Fehler in DB_User:', userError);
-      return res.status(500).json({ error: 'User-Eintrag fehlgeschlagen: ' + userError.message });
-    }
-
-    return res.status(200).json({
-      message: '✅ Kunde + Verantwortlicher erfolgreich gespeichert.',
-      user_id: userId,
-    });
+    return res.status(200).json({ message: '✅ Kunde erfolgreich gespeichert.' });
 
   } catch (err) {
     console.error('💥 Schwerer Fehler:', err);
     return res.status(500).json({ error: 'Unerwarteter Fehler: ' + err.message });
   }
 }
-
