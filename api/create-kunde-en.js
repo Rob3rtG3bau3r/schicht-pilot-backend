@@ -42,16 +42,26 @@ export default async function handler(req, res) {
     const userId = authUser.user.id;
 
     // ➤ Schritt 2: Kunde in DB_Kunde speichern
-    const { data: kundeData, error: kundeError } = await supabase.from('DB_Kunde').insert([
-      {
-        firmenname: kundenData.firmenname,
-        aktiv: kundenData.aktiv ?? true,
-        verantwortlich: kundenData.verantwortlich,
-        erstellt_von: kundenData.erstellt_von || null,
-        created_at: new Date().toISOString(),
-        kosten_monatlich: null,
-      }
-    ]).select();
+    const kundePayload = {
+      firmenname: kundenData.firmenname,
+      aktiv: kundenData.aktiv ?? true,
+      verantwortlich: kundenData.verantwortlich,
+      erstellt_von: kundenData.erstellt_von || null,
+      created_at: new Date().toISOString(),
+      kosten_monatlich: 0,               // Standardwert statt null
+      sprache: kundenData.sprache || 'de',
+      feature_set: kundenData.feature_set || '',
+      besonderheiten: kundenData.besonderheiten || '',
+      logo_url: kundenData.logo_url || '',
+      logo_bool: kundenData.logo_bool ?? false,
+    };
+
+    console.log('📦 Insert-Objekt für DB_Kunde:', kundePayload);
+
+    const { data: kundeData, error: kundeError } = await supabase
+      .from('DB_Kunde')
+      .insert([kundePayload])
+      .select();
 
     if (kundeError) {
       console.error('❌ Fehler beim Einfügen in DB_Kunde:', kundeError);
@@ -81,14 +91,14 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'User angelegt, aber Eintrag in DB_User fehlgeschlagen: ' + userError.message });
     }
 
-    return res.status(200).json({ message: 'Kunde + Verantwortlicher erfolgreich gespeichert.', user_id: userId });
+    return res.status(200).json({
+      message: 'Kunde + Verantwortlicher erfolgreich gespeichert.',
+      user_id: userId
+    });
 
   } catch (err) {
     console.error('💥 Allgemeiner Fehler:', err);
     return res.status(500).json({ error: 'Unerwarteter Serverfehler: ' + err.message });
   }
-}
-
-  return res.status(200).json({ message: 'Kunde + Verantwortlicher erfolgreich gespeichert.', user_id: userId });
 }
 
