@@ -29,10 +29,10 @@ export default async function handler(req, res) {
   try {
     const insertData = {
       firmenname: kundenData.firmenname,
-      verantwortlich: kundenData.verantwortlich, // z. B. E-Mail
-      verantwortlich_uuid: kundenData.verantwortlich_uuid || null, // neue Referenz zu DB_User
+      verantwortlich: kundenData.verantwortlich,
+      verantwortlich_uuid: kundenData.verantwortlich_uuid || null,
       created_by: kundenData.created_by || null,
-      aktiv: true,
+      aktiv: kundenData.aktiv ?? false, // jetzt dynamisch übergeben
     };
 
     const { error: kundeError } = await supabase.from('DB_Kunden').insert([insertData]);
