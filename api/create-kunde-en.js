@@ -1,4 +1,4 @@
-// /pages/api/create-kunde-en.js (NEU! angepasst für DB_Kunden)
+// /pages/api/create-kunde-en.js (neu mit verantwortlicher_uuid)
 import { createClient } from '@supabase/supabase-js';
 
 export const config = {
@@ -29,7 +29,8 @@ export default async function handler(req, res) {
   try {
     const insertData = {
       firmenname: kundenData.firmenname,
-      verantwortlich: kundenData.verantwortlich,
+      verantwortlich: kundenData.verantwortlich, // z. B. E-Mail
+      verantwortlich_uuid: kundenData.verantwortlich_uuid || null, // neue Referenz zu DB_User
       created_by: kundenData.created_by || null,
       aktiv: true,
     };
