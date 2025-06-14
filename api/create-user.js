@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     const { data: bestehenderKunde, error: checkError } = await supabase
       .from('DB_Kunden')
       .select('id')
-      .eq('firma', userData.firma);
+      .eq('firmenname', userData.firma);
 
     if (checkError) {
       return res.status(500).json({ error: checkError.message });
@@ -77,9 +77,11 @@ export default async function handler(req, res) {
     if (!bestehenderKunde || bestehenderKunde.length === 0) {
       const { error: kundenError } = await supabase.from('DB_Kunden').insert([
         {
-          firma: userData.firma,
-          erstellt_von: userData.erstellt_von || null,
-          erstellt_am: new Date().toISOString(),
+          firmenname: userData.firma,
+          verantwortlich: `${userData.vorname} ${userData.nachname}`,
+          verantwortlich_uuid: authUser.user.id,
+          created_by: userData.erstellt_von || null,
+          created_at: new Date().toISOString(),
           aktiv: true,
         },
       ]);
@@ -89,6 +91,7 @@ export default async function handler(req, res) {
       }
     }
   }
+
 
   // 4. Erfolg zurückgeben
   return res.status(200).json({ user: authUser.user });
