@@ -27,6 +27,7 @@ export default async function handler(req, res) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // 1. Auth User anlegen
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: authError.message });
   }
 
-  // 🔄 DB_User befüllen
+  // 2. In DB_User speichern
   const { error: dbError } = await supabase.from('DB_User').insert([
     {
       user_id: authUser.user.id,
@@ -58,5 +59,37 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: dbError.message });
   }
 
+  // 3. Optional: Kunde zusätzlich in DB_Kunden eintragen
+  if (
+    userData.rolle === 'Admin_Dev' &&
+    userData.funktion === 'Kostenverantwortlich'
+  ) {
+    // prüfen, ob Firma bereits existiert
+    const { data: bestehenderKunde, error: checkError } = await supabase
+      .from('DB_Kunden')
+      .select('id')
+      .eq('firma', userData.firma);
+
+    if (checkError) {
+      return res.status(500).json({ error: checkError.message });
+    }
+
+    if (!bestehenderKunde || bestehenderKunde.length === 0) {
+      const { error: kundenError } = await supabase.from('DB_Kunden').insert([
+        {
+          firma: userData.firma,
+          erstellt_von: userData.erstellt_von || null,
+          erstellt_am: new Date().toISOString(),
+          aktiv: true,
+        },
+      ]);
+
+      if (kundenError) {
+        return res.status(500).json({ error: kundenError.message });
+      }
+    }
+  }
+
+  // 4. Erfolg zurückgeben
   return res.status(200).json({ user: authUser.user });
 }
