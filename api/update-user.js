@@ -14,10 +14,10 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { user_id, updatedData } = req.body;
+  const { id: userId, updateData, updateAuthEmail } = req.body;
 
-  if (!user_id || !updatedData) {
-    return res.status(400).json({ error: 'user_id oder updatedData fehlt.' });
+  if (!userId || !updateData) {
+    return res.status(400).json({ error: 'user_id oder updateData fehlt.' });
   }
 
   const supabase = createClient(
@@ -26,41 +26,28 @@ export default async function handler(req, res) {
   );
 
   try {
+    // ✅ 1. Zuerst normale Felder aktualisieren
     const { error: updateError } = await supabase
       .from('DB_User')
-      .update(updatedData)
-      .eq('user_id', user_id);
+      .update(updateData)
+      .eq('user_id', userId);
 
     if (updateError) {
       console.error('❌ Fehler beim User-Update:', updateError);
       return res.status(500).json({ error: 'Update fehlgeschlagen: ' + updateError.message });
     }
-    // Wenn updateAuthEmail mitgeschickt wird, versuche auch die Mail in Supabase Auth zu ändern
-if (req.body.updateAuthEmail) {
-  const { data: userData, error: fetchError } = await supabase
-    .from('DB_User')
-    .select('email')
-    .eq('user_id', user_id)
-    .single();
 
-  if (fetchError) {
-    return res.status(500).json({ error: 'Auth-Email lesen fehlgeschlagen: ' + fetchError.message });
-  }
+    // ✅ 2. Falls neue E-Mail mitgegeben wurde, auch in auth.users ändern
+    if (updateAuthEmail) {
+      const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+        email: updateAuthEmail,
+      });
 
-  const { data: userAuth } = await supabase.auth.admin.listUsers();
-  const user = userAuth.users.find(u => u.email === userData.email);
-
-  if (user) {
-    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(user.id, {
-      email: req.body.updateAuthEmail,
-    });
-
-    if (authUpdateError) {
-      return res.status(500).json({ error: 'Auth-Mail-Update fehlgeschlagen: ' + authUpdateError.message });
+      if (authUpdateError) {
+        console.error('❌ Fehler beim Auth-E-Mail-Update:', authUpdateError);
+        return res.status(500).json({ error: 'E-Mail-Update fehlgeschlagen: ' + authUpdateError.message });
+      }
     }
-  }
-}
-
 
     return res.status(200).json({ message: '✅ Benutzer erfolgreich aktualisiert.' });
   } catch (err) {
@@ -68,3 +55,4 @@ if (req.body.updateAuthEmail) {
     return res.status(500).json({ error: 'Unerwarteter Fehler: ' + err.message });
   }
 }
+
