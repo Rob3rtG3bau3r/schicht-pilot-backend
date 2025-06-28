@@ -1,5 +1,12 @@
+// /pages/api/update-user.js
+import { createClient } from '@supabase/supabase-js';
+
+export const config = {
+  api: { bodyParser: true },
+};
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -7,10 +14,10 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { id, updateData, updateAuthEmail } = req.body;
+  const { user_id, updatedData } = req.body;
 
-  if (!id || !updateData) {
-    return res.status(400).json({ error: 'ID oder updateData fehlt.' });
+  if (!user_id || !updatedData) {
+    return res.status(400).json({ error: 'user_id oder updatedData fehlt.' });
   }
 
   const supabase = createClient(
@@ -19,33 +26,20 @@ export default async function handler(req, res) {
   );
 
   try {
-    // Update DB_User
-    const { error: dbError } = await supabase
+    const { error: updateError } = await supabase
       .from('DB_User')
-      .update(updateData)
-      .eq('user_id', id);
+      .update(updatedData)
+      .eq('user_id', user_id);
 
-    if (dbError) {
-      console.error('DB Error:', dbError);
-      return res.status(500).json({ error: dbError.message });
+    if (updateError) {
+      console.error('❌ Fehler beim User-Update:', updateError);
+      return res.status(500).json({ error: 'Update fehlgeschlagen: ' + updateError.message });
     }
 
-    // Optional: Email in Auth ändern
-    if (updateAuthEmail) {
-      const { error: authError } = await supabase.auth.admin.updateUserById(id, {
-        email: updateAuthEmail
-      });
-
-      if (authError) {
-        console.error('Auth Error:', authError);
-        return res.status(500).json({ error: authError.message });
-      }
-    }
-
-    return res.status(200).json({ message: 'Benutzer erfolgreich aktualisiert' });
+    return res.status(200).json({ message: '✅ Benutzer erfolgreich aktualisiert.' });
   } catch (err) {
-    console.error('Fatal:', err);
-    return res.status(500).json({ error: err.message });
+    console.error('💥 Schwerer Fehler:', err);
+    return res.status(500).json({ error: 'Unerwarteter Fehler: ' + err.message });
   }
 }
 
