@@ -1,46 +1,64 @@
+// /pages/api/update-user.js
 import { createClient } from '@supabase/supabase-js';
 
 export const config = {
-  api: { bodyParser: true }
+  api: { bodyParser: true },
 };
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 export default async function handler(req, res) {
-  // CORS-Header global setzen
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  const allowedOrigins = ['http://localhost:5173', 'https://schicht-pilot-frontend.vercel.app'];
+  const origin = req.headers.origin;
 
-  // Bei Preflight-Anfragen sofort 200 OK zurückgeben
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  const { id, updateData } = req.body;
+  const { id, updateData, updateAuthEmail } = req.body;
 
   if (!id || !updateData) {
-    return res.status(400).json({ error: 'Fehlende ID oder Daten' });
+    return res.status(400).json({ error: 'Fehlende Daten: id oder updateData fehlt.' });
   }
 
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+
   try {
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('DB_User')
       .update(updateData)
       .eq('user_id', id);
 
-    if (error) {
-      console.error('Update-Fehler:', error);
-      return res.status(500).json({ error: error.message });
+    if (updateError) {
+      console.error('❌ Update-Fehler DB_User:', updateError);
+      return res.status(500).json({ error: 'Fehler beim Speichern: ' + updateError.message });
     }
 
-    return res.status(200).json({ message: 'Update erfolgreich' });
+    // Optional: Mail-Adresse im Auth-Backend ändern
+    if (updateAuthEmail) {
+      const { error: authError } = await supabase.auth.admin.updateUserById(id, {
+        email: updateAuthEmail,
+      });
+
+      if (authError) {
+        console.warn('⚠️ Auth-Update Warnung:', authError.message);
+      }
+    }
+
+    return res.status(200).json({ message: '✅ Benutzer erfolgreich aktualisiert.' });
   } catch (err) {
-    console.error('Server-Fehler:', err);
-    return res.status(500).json({ error: err.message });
+    console.error('💥 Schwerer Fehler:', err);
+    return res.status(500).json({ error: 'Serverfehler: ' + err.message });
   }
 }
+
