@@ -35,6 +35,32 @@ export default async function handler(req, res) {
       console.error('❌ Fehler beim User-Update:', updateError);
       return res.status(500).json({ error: 'Update fehlgeschlagen: ' + updateError.message });
     }
+    // Wenn updateAuthEmail mitgeschickt wird, versuche auch die Mail in Supabase Auth zu ändern
+if (req.body.updateAuthEmail) {
+  const { data: userData, error: fetchError } = await supabase
+    .from('DB_User')
+    .select('email')
+    .eq('user_id', user_id)
+    .single();
+
+  if (fetchError) {
+    return res.status(500).json({ error: 'Auth-Email lesen fehlgeschlagen: ' + fetchError.message });
+  }
+
+  const { data: userAuth } = await supabase.auth.admin.listUsers();
+  const user = userAuth.users.find(u => u.email === userData.email);
+
+  if (user) {
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(user.id, {
+      email: req.body.updateAuthEmail,
+    });
+
+    if (authUpdateError) {
+      return res.status(500).json({ error: 'Auth-Mail-Update fehlgeschlagen: ' + authUpdateError.message });
+    }
+  }
+}
+
 
     return res.status(200).json({ message: '✅ Benutzer erfolgreich aktualisiert.' });
   } catch (err) {
