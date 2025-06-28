@@ -1,4 +1,3 @@
-// /pages/api/update-user.js
 import { createClient } from '@supabase/supabase-js';
 
 export const config = {
@@ -6,17 +5,20 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  // CORS erlauben
+  res.setHeader('Access-Control-Allow-Origin', '*'); // ODER z. B. 'http://localhost:5173'
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  // OPTIONS preflight für CORS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-  const { id: userId, updateData, updateAuthEmail } = req.body;
+  const { id: user_id, updateData, updateAuthEmail } = req.body;
 
-  if (!userId || !updateData) {
+  if (!user_id || !updateData) {
     return res.status(400).json({ error: 'user_id oder updateData fehlt.' });
   }
 
@@ -26,33 +28,32 @@ export default async function handler(req, res) {
   );
 
   try {
-    // ✅ 1. Zuerst normale Felder aktualisieren
+    // User-Daten in DB_User ändern
     const { error: updateError } = await supabase
       .from('DB_User')
       .update(updateData)
-      .eq('user_id', userId);
+      .eq('user_id', user_id);
 
     if (updateError) {
-      console.error('❌ Fehler beim User-Update:', updateError);
-      return res.status(500).json({ error: 'Update fehlgeschlagen: ' + updateError.message });
+      return res.status(500).json({ error: updateError.message });
     }
 
-    // ✅ 2. Falls neue E-Mail mitgegeben wurde, auch in auth.users ändern
+    // Auth-E-Mail ändern (wenn mitgegeben)
     if (updateAuthEmail) {
-      const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+      const { error: authError } = await supabase.auth.admin.updateUserById(user_id, {
         email: updateAuthEmail,
       });
 
-      if (authUpdateError) {
-        console.error('❌ Fehler beim Auth-E-Mail-Update:', authUpdateError);
-        return res.status(500).json({ error: 'E-Mail-Update fehlgeschlagen: ' + authUpdateError.message });
+      if (authError) {
+        return res.status(500).json({ error: 'Auth-Mail konnte nicht geändert werden: ' + authError.message });
       }
     }
 
-    return res.status(200).json({ message: '✅ Benutzer erfolgreich aktualisiert.' });
+    return res.status(200).json({ message: 'Benutzer erfolgreich aktualisiert.' });
   } catch (err) {
-    console.error('💥 Schwerer Fehler:', err);
-    return res.status(500).json({ error: 'Unerwarteter Fehler: ' + err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
+
+
 
